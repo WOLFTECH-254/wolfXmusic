@@ -3,8 +3,13 @@ import { Link } from "wouter";
 import { Play } from "lucide-react";
 import { Track } from "@workspace/api-client-react/src/generated/api.schemas";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function Home() {
+  usePageMeta({
+    title: "wolfXmusic",
+    description: "Discover new music. Stream full songs from any artist — powered by wolfXmusic.",
+  });
   const { playTrack } = usePlayer();
   const artists = ["Drake", "The Weeknd", "Taylor Swift", "Kendrick Lamar", "Bad Bunny"];
   

@@ -46,11 +46,13 @@ router.post("/playlists", async (req, res) => {
     return;
   }
   try {
+    const thumbnail = typeof req.body.thumbnail === "string" ? req.body.thumbnail : null;
     const [row] = await db
       .insert(playlistsTable)
       .values({
         name: parsed.data.name,
         description: parsed.data.description ?? null,
+        thumbnail,
       })
       .returning();
     res.status(201).json(fmtPlaylist(row, 0));

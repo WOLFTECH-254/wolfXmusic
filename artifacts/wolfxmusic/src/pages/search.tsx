@@ -5,8 +5,13 @@ import { Input } from "@/components/ui/input";
 import { TrackRow } from "@/components/ui/track-row";
 import { Link } from "wouter";
 import { Track } from "@workspace/api-client-react/src/generated/api.schemas";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function Search() {
+  usePageMeta({
+    title: "Search",
+    description: "Search for tracks, artists, and albums on wolfXmusic.",
+  });
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"track" | "artist" | "album">("track");

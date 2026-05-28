@@ -1,0 +1,20 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "HLt0mu4o19oVvbvNFpQ5L"
+uri = "file://artifacts/wolfxmusic/public/og-image.svg"
+type = "image"
+title = "wolfXmusic OG / Share Image (1200×630)"
+
+[[outputs]]
+id = "eo0PcOQ6Q66u1jsJ-zoTE"
+uri = "file://artifacts/wolfxmusic/public/thumbnail-default.svg"
+type = "image"
+title = "Default Playlist Thumbnail (wXm)"
+
+[[outputs]]
+id = "efVZe2o2HYDese4T3__4z"
+uri = "file://artifacts/wolfxmusic/public/favicon.svg"
+type = "image"
+title = "Updated Favicon"

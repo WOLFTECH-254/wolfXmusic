@@ -4,6 +4,7 @@ import { TrackRow } from "@/components/ui/track-row";
 import { Play } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { Link } from "wouter";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function Album() {
   const params = useParams();
@@ -11,6 +12,12 @@ export function Album() {
   const { playTrack } = usePlayer();
 
   const { data: album, isLoading } = useGetAlbum(id, { query: { enabled: !!id, queryKey: getGetAlbumQueryKey(id) } });
+
+  usePageMeta({
+    title: album ? `${album.name} — ${album.artist}` : "Album",
+    description: album ? `${album.name} by ${album.artist} · ${album.total_tracks} tracks · Stream on wolfXmusic.` : undefined,
+    image: album?.thumbnail,
+  });
 
   if (isLoading) {
     return <div className="animate-pulse flex flex-col gap-10">

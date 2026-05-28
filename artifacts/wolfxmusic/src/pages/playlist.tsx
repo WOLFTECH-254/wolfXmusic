@@ -4,6 +4,7 @@ import { TrackRow } from "@/components/ui/track-row";
 import { Play, ListMusic } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { Track } from "@workspace/api-client-react/src/generated/api.schemas";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function Playlist() {
   const params = useParams();
@@ -11,6 +12,12 @@ export function Playlist() {
   const { playTrack } = usePlayer();
 
   const { data: playlist, isLoading } = useGetPlaylist(id, { query: { enabled: !!id, queryKey: getGetPlaylistQueryKey(id) } });
+
+  usePageMeta({
+    title: playlist?.name ?? "Playlist",
+    description: playlist ? `${playlist.name} · ${playlist.trackCount} tracks · Listen on wolfXmusic.` : undefined,
+    image: playlist?.thumbnail ?? undefined,
+  });
 
   if (isLoading) {
     return <div className="animate-pulse flex flex-col gap-10">
@@ -38,11 +45,11 @@ export function Playlist() {
     <div className="flex flex-col gap-8 animate-in fade-in duration-500">
       <section className="flex flex-col md:flex-row items-end gap-6 pt-10 pb-6 border-b border-border/50">
         <div className="w-48 h-48 md:w-64 md:h-64 rounded-md overflow-hidden shadow-2xl shrink-0 bg-secondary flex items-center justify-center border border-border">
-          {playlist.thumbnail ? (
-            <img src={playlist.thumbnail} alt={playlist.name} className="w-full h-full object-cover" />
-          ) : (
-            <ListMusic size={64} className="text-muted-foreground/30" />
-          )}
+          <img
+            src={playlist.thumbnail || "/thumbnail-default.svg"}
+            alt={playlist.name}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex flex-col gap-2 w-full">
           <span className="text-sm font-semibold tracking-wider text-primary uppercase">Playlist</span>

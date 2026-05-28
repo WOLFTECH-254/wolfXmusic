@@ -4,6 +4,7 @@ import { TrackRow } from "@/components/ui/track-row";
 import { Link } from "wouter";
 import { Play } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function Artist() {
   const params = useParams();
@@ -13,6 +14,12 @@ export function Artist() {
   const { data: artist, isLoading: artistLoading } = useGetArtist(id, { query: { enabled: !!id, queryKey: getGetArtistQueryKey(id) } });
   const { data: topTracks, isLoading: tracksLoading } = useGetArtistTopTracks(id, { query: { enabled: !!id, queryKey: getGetArtistTopTracksQueryKey(id) } });
   const { data: albums, isLoading: albumsLoading } = useGetArtistAlbums(id, { query: { enabled: !!id, queryKey: getGetArtistAlbumsQueryKey(id) } });
+
+  usePageMeta({
+    title: artist?.name ?? "Artist",
+    description: artist ? `Listen to ${artist.name} on wolfXmusic — top tracks, albums, and more.` : undefined,
+    image: artist?.thumbnail,
+  });
 
   if (artistLoading) {
     return <div className="animate-pulse flex flex-col gap-10">
