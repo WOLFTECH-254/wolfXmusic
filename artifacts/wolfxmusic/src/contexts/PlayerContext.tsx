@@ -124,7 +124,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setStreamUrl(url);
         audio.src = url;
         audio.load();
-        audio.play().catch(() => setIsPlaying(false));
+        // Only auto-play if the user intended to play (not on a page refresh where isPlaying
+        // was restored as false from localStorage)
+        if (isPlayingRef.current) {
+          audio.play().catch(() => setIsPlaying(false));
+        }
       } else {
         setIsPlaying(false);
       }
