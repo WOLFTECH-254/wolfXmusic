@@ -353,8 +353,32 @@ export function PlayerBar() {
               <MoreHorizontal size={17} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-52 bg-card border-border font-mono text-sm mb-1">
-            <PlaylistSubMenu />
+          <DropdownMenuContent align="end" side="top" className="w-56 bg-card border-border font-mono text-sm mb-1">
+            {/* Playlist section — flat list, no sub-menu */}
+            <div className="px-2 pt-2 pb-1">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1 px-1 flex items-center gap-1.5">
+                <ListPlus className="h-3 w-3" /> Add to Playlist
+              </p>
+              {!playlists?.length ? (
+                <p className="text-xs text-muted-foreground px-1 py-1">No playlists yet</p>
+              ) : (
+                <div className="flex flex-col gap-0.5">
+                  {playlists.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleAddToPlaylist(p.id)}
+                      className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded text-xs hover:bg-primary/10 transition-colors"
+                    >
+                      {addedToPlaylist === p.id
+                        ? <Check className="h-3 w-3 shrink-0" style={{ color: "#00ff00" }} />
+                        : <div className="w-3 h-3 shrink-0" />
+                      }
+                      <span className="truncate">{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleDownload}
