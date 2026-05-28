@@ -4,8 +4,8 @@ A music streaming and discovery platform for browsing artists, albums, playlists
 
 ## Run & Operate
 
-- `Start application` workflow — runs the React frontend (port 5000)
-- `Start API server` workflow — runs the Express API server (port 8000)
+- `artifacts/wolfxmusic: web` workflow — runs the React frontend (port auto-assigned by platform, defaults to 5000)
+- `artifacts/api-server: API Server` workflow — runs the Express API server (port 8080)
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm run typecheck` — full typecheck across all packages
@@ -33,9 +33,9 @@ A music streaming and discovery platform for browsing artists, albums, playlists
 
 ## Architecture decisions
 
-- Frontend proxies `/api` requests to the API server (port 8000) via Vite dev proxy
-- The API server uses `PORT` env var; frontend uses both `PORT` and `BASE_PATH`
-- Workflows use inline env vars: `PORT=5000 BASE_PATH=/ pnpm ... run dev` (frontend) and `PORT=8000 pnpm ... run dev` (API)
+- Frontend proxies `/api` requests to the API server (port 8080) via Vite dev proxy
+- The API server uses `PORT` env var (hardcoded to 8080 in dev script)
+- Frontend PORT is injected by Replit's artifact workflow system; BASE_PATH defaults to "/"
 - DB schema pushed with `drizzle-kit push` (no migration files)
 
 ## Product
@@ -51,8 +51,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-- Frontend workflow and API server workflow use different ports (5000 and 8000); set inline in the workflow command
-- `BASE_PATH` env var is required by the Vite config
+- Frontend workflow port is injected by the Replit artifact system (don't hardcode PORT= in the dev script)
+- API server uses PORT=8080 (hardcoded in dev script); Vite proxy points to localhost:8080
+- `BASE_PATH` defaults to "/" in vite.config.ts if not set
 - Run `pnpm --filter @workspace/api-spec run codegen` after changing the OpenAPI spec
 
 ## Pointers
