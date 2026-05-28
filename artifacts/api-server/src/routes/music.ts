@@ -3,6 +3,8 @@ import { Router } from "express";
 const router = Router();
 
 const BASE = "https://spotify.xwolf.space/api";
+const DOWNLOAD_BASE = "https://apis.xwolf.space/api/spotify/download";
+const DOWNLOAD_KEY = "wxa_u_xwk7sch6xj";
 
 async function proxyFetch(url: string): Promise<unknown> {
   const res = await fetch(url);
@@ -148,6 +150,29 @@ router.get("/music/playlist/:id", async (req, res) => {
   } catch (err: unknown) {
     req.log.error({ err }, "get playlist failed");
     res.status(500).json({ error: "Failed to fetch playlist" });
+  }
+});
+
+router.get("/music/download", async (req, res) => {
+  const { q } = req.query as Record<string, string>;
+  if (!q) {
+    res.status(400).json({ error: "q is required" });
+    return;
+  }
+  try {
+    const url = `${DOWNLOAD_BASE}?q=${encodeURIComponent(q)}&key=${DOWNLOAD_KEY}`;
+    const data = await proxyFetch(url) as Record<string, unknown>;
+    const streamUrl =
+      (data.downloadUrl as string) ??
+      (data.download_url as string) ??
+      (data.stream_url as string) ??
+      (data.audio_url as string) ??
+      (data.url as string) ??
+      null;
+    res.json({ ...data, stream_url: streamUrl });
+  } catch (err: unknown) {
+    req.log.error({ err }, "download failed");
+    res.status(500).json({ error: "Download failed" });
   }
 });
 

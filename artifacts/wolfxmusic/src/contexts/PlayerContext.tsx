@@ -9,6 +9,7 @@ interface PlayerState {
   duration: number;
   volume: number;
   isFetching: boolean;
+  streamUrl: string | null;
 }
 
 interface PlayerContextType extends PlayerState {
@@ -24,12 +25,13 @@ interface PlayerContextType extends PlayerState {
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
-async function fetchPreviewUrl(trackId: string): Promise<string | null> {
+async function fetchStreamUrl(title: string, artist: string): Promise<string | null> {
   try {
-    const res = await fetch(`/api/music/track/${trackId}`);
+    const q = `${title} ${artist}`.trim();
+    const res = await fetch(`/api/music/download?q=${encodeURIComponent(q)}`);
     if (!res.ok) return null;
     const data = await res.json();
-    return data.preview_url ?? null;
+    return data.stream_url ?? null;
   } catch {
     return null;
   }
@@ -48,6 +50,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.8);
   const [isFetching, setIsFetching] = useState(false);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<Track[]>([]);
@@ -95,7 +98,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     };
   }, [nextTrackStable]);
 
-  // Fires when currentTrack.id changes — handles src + auto-fetch of preview_url
+  // Fires when currentTrack.id changes — fetches full stream URL
   useEffect(() => {
     if (!currentTrack || !audioRef.current) return;
     const audio = audioRef.current;
@@ -108,44 +111,26 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("wolfXmusic_history", JSON.stringify([currentTrack, ...filtered].slice(0, 10)));
     } catch { /* ignore */ }
 
-    if (currentTrack.preview_url) {
-      audio.src = currentTrack.preview_url;
-      audio.load();
-      // isPlaying will be true (set by playTrack before this effect runs)
-      audio.play().catch(() => setIsPlaying(false));
-    } else {
-      // Need to fetch preview_url first
-      audio.src = "";
-      audio.pause();
-      setIsFetching(true);
-      const id = currentTrack.id;
-      fetchPreviewUrl(id).then(url => {
-        setIsFetching(false);
-        if (url) {
-          setCurrentTrack(prev =>
-            prev?.id === id ? { ...prev, preview_url: url } : prev
-          );
-        } else {
-          setIsPlaying(false);
-        }
-      });
-    }
+    audio.src = "";
+    audio.pause();
+    setStreamUrl(null);
+    setIsFetching(true);
+
+    const id = currentTrack.id;
+    fetchStreamUrl(currentTrack.title, currentTrack.artist).then(url => {
+      if (currentTrackRef.current?.id !== id) return;
+      setIsFetching(false);
+      if (url) {
+        setStreamUrl(url);
+        audio.src = url;
+        audio.load();
+        audio.play().catch(() => setIsPlaying(false));
+      } else {
+        setIsPlaying(false);
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrack?.id]);
-
-  // Fires when preview_url is enriched on the same track
-  useEffect(() => {
-    if (!currentTrack?.preview_url || !audioRef.current) return;
-    const audio = audioRef.current;
-    // Only act if src isn't already set to this URL
-    if (audio.src !== currentTrack.preview_url) {
-      audio.src = currentTrack.preview_url;
-      audio.load();
-      if (isPlayingRef.current) {
-        audio.play().catch(() => setIsPlaying(false));
-      }
-    }
-  }, [currentTrack?.preview_url]);
 
   // Fires when play/pause toggles
   useEffect(() => {
@@ -162,7 +147,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     pendingPlayRef.current = true;
     setIsPlaying(true);
     if (currentTrackRef.current?.id === track.id) {
-      // Same track — just resume
       return;
     }
     setCurrentTrack(track);
@@ -209,7 +193,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PlayerContext.Provider value={{
-      currentTrack, queue, isPlaying, currentTime, duration, volume, isFetching,
+      currentTrack, queue, isPlaying, currentTime, duration, volume, isFetching, streamUrl,
       playTrack, pause, resume, nextTrack, prevTrack, seek, setVolume, addToQueue,
     }}>
       {children}

@@ -1,8 +1,7 @@
 import { usePlayer } from "@/contexts/PlayerContext";
 import { formatTime } from "@/lib/format";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2 } from "lucide-react";
-import { Link } from "wouter";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Download } from "lucide-react";
 
 export function PlayerBar() {
   const {
@@ -12,6 +11,7 @@ export function PlayerBar() {
     duration,
     volume,
     isFetching,
+    streamUrl,
     pause,
     resume,
     nextTrack,
@@ -22,7 +22,19 @@ export function PlayerBar() {
 
   if (!currentTrack) return null;
 
-  const progress = (currentTime / (duration || 30)) * 100;
+  const progress = (currentTime / (duration || 1)) * 100;
+
+  function handleDownload() {
+    if (!streamUrl || !currentTrack) return;
+    const a = document.createElement("a");
+    a.href = streamUrl;
+    a.download = `${currentTrack.title} - ${currentTrack.artist}.mp3`;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
   return (
     <div
@@ -40,7 +52,7 @@ export function PlayerBar() {
         style={{ background: "rgba(0,255,0,0.1)" }}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          seek(((e.clientX - rect.left) / rect.width) * (duration || 30));
+          seek(((e.clientX - rect.left) / rect.width) * (duration || 1));
         }}
       >
         <div
@@ -124,12 +136,22 @@ export function PlayerBar() {
           <div className="hidden md:flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
             <span>{formatTime(currentTime)}</span>
             <span className="opacity-30">—</span>
-            <span>{formatTime(duration || 30)}</span>
+            <span>{formatTime(duration || 0)}</span>
           </div>
         </div>
 
-        {/* Volume */}
+        {/* Volume + Download */}
         <div className="flex items-center justify-end gap-2 w-[30%] min-w-0">
+          <button
+            onClick={handleDownload}
+            disabled={!streamUrl || isFetching}
+            title="Download full song"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+            data-testid="button-download"
+          >
+            <Download size={17} />
+          </button>
+
           <button
             onClick={() => setVolume(volume === 0 ? 0.8 : 0)}
             className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
