@@ -28,7 +28,7 @@ const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 async function fetchStreamUrl(title: string, artist: string): Promise<string | null> {
   try {
     const q = `${title} ${artist}`.trim();
-    const res = await fetch(`/api/music/download?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/api/music/stream?q=${encodeURIComponent(q)}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data.stream_url ?? null;

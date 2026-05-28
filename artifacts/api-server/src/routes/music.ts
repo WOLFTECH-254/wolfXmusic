@@ -1,4 +1,35 @@
 import { Router } from "express";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
+
+// Simple in-memory cache: query → { url, expires }
+const streamCache = new Map<string, { url: string; expires: number }>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+async function getYtStreamUrl(query: string): Promise<string | null> {
+  const cached = streamCache.get(query);
+  if (cached && cached.expires > Date.now()) return cached.url;
+
+  try {
+    const { stdout } = await execFileAsync("yt-dlp", [
+      `ytsearch1:${query}`,
+      "--get-url",
+      "-f", "bestaudio[ext=m4a]/bestaudio/best",
+      "--no-playlist",
+      "--no-warnings",
+      "--quiet",
+    ], { timeout: 30000 });
+
+    const url = stdout.trim().split("\n")[0];
+    if (!url) return null;
+    streamCache.set(query, { url, expires: Date.now() + CACHE_TTL_MS });
+    return url;
+  } catch {
+    return null;
+  }
+}
 
 const router = Router();
 
@@ -150,6 +181,75 @@ router.get("/music/playlist/:id", async (req, res) => {
   } catch (err: unknown) {
     req.log.error({ err }, "get playlist failed");
     res.status(500).json({ error: "Failed to fetch playlist" });
+  }
+});
+
+// Returns a proxy URL the browser can stream from
+router.get("/music/stream", async (req, res) => {
+  const { q } = req.query as Record<string, string>;
+  if (!q) {
+    res.status(400).json({ error: "q is required" });
+    return;
+  }
+  try {
+    const url = await getYtStreamUrl(q);
+    if (!url) {
+      res.status(404).json({ error: "No stream found" });
+      return;
+    }
+    // Return a proxy URL — the browser will stream via our server
+    const proxyPath = `/api/music/proxy?q=${encodeURIComponent(q)}`;
+    res.json({ stream_url: proxyPath });
+  } catch (err: unknown) {
+    req.log.error({ err }, "stream extraction failed");
+    res.status(500).json({ error: "Stream extraction failed" });
+  }
+});
+
+// Proxy the YouTube audio stream so browser can play it (YouTube URLs are IP-locked)
+router.get("/music/proxy", async (req, res) => {
+  const { q } = req.query as Record<string, string>;
+  if (!q) { res.status(400).end(); return; }
+
+  try {
+    const ytUrl = await getYtStreamUrl(q);
+    if (!ytUrl) { res.status(404).end(); return; }
+
+    const rangeHeader = req.headers["range"];
+    const upstreamRes = await fetch(ytUrl, {
+      headers: rangeHeader ? { Range: rangeHeader } : {},
+    });
+
+    res.status(upstreamRes.status);
+    const contentType = upstreamRes.headers.get("content-type");
+    const contentLength = upstreamRes.headers.get("content-length");
+    const contentRange = upstreamRes.headers.get("content-range");
+    const acceptRanges = upstreamRes.headers.get("accept-ranges");
+
+    if (contentType) res.setHeader("Content-Type", contentType);
+    if (contentLength) res.setHeader("Content-Length", contentLength);
+    if (contentRange) res.setHeader("Content-Range", contentRange);
+    if (acceptRanges) res.setHeader("Accept-Ranges", acceptRanges);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    if (upstreamRes.body) {
+      const reader = upstreamRes.body.getReader();
+      const pump = async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) { res.end(); break; }
+          const ok = res.write(value);
+          if (!ok) await new Promise(r => res.once("drain", r));
+        }
+      };
+      req.on("close", () => reader.cancel());
+      await pump();
+    } else {
+      res.end();
+    }
+  } catch (err: unknown) {
+    req.log.error({ err }, "proxy stream failed");
+    if (!res.headersSent) res.status(500).end();
   }
 });
 
