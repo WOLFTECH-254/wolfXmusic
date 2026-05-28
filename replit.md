@@ -1,19 +1,21 @@
-# [Project name]
+# WOLFXmusic
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A music streaming and discovery platform for browsing artists, albums, playlists, and favorites.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
+- `Start application` workflow — runs the React frontend (port 5000)
+- `Start API server` workflow — runs the Express API server (port 8000)
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- Required env: `DATABASE_URL` — Postgres connection string (auto-provisioned)
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React 19 + Vite, Tailwind CSS v4, Radix UI, TanStack Query, Wouter (routing), Framer Motion
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -22,15 +24,26 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/wolfxmusic/` — React frontend app
+- `artifacts/api-server/` — Express API server
+- `lib/db/src/schema/` — DB schema (favorites, playlists)
+- `lib/api-spec/` — OpenAPI spec + Orval config
+- `lib/api-zod/` — Generated Zod schemas
+- `lib/api-client-react/` — Generated TanStack Query hooks
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Frontend proxies `/api` requests to the API server (port 8000) via Vite dev proxy
+- The API server uses `PORT` env var; frontend uses both `PORT` and `BASE_PATH`
+- Workflows use inline env vars: `PORT=5000 BASE_PATH=/ pnpm ... run dev` (frontend) and `PORT=8000 pnpm ... run dev` (API)
+- DB schema pushed with `drizzle-kit push` (no migration files)
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Discover: browse featured artists and new music
+- Search: find tracks, albums, artists
+- Library: manage playlists and favorites
+- Artist/Album detail pages
 
 ## User preferences
 
@@ -38,7 +51,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Frontend workflow and API server workflow use different ports (5000 and 8000); set inline in the workflow command
+- `BASE_PATH` env var is required by the Vite config
+- Run `pnpm --filter @workspace/api-spec run codegen` after changing the OpenAPI spec
 
 ## Pointers
 
