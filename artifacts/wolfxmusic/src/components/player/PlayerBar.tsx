@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { formatTime } from "@/lib/format";
 import { Slider } from "@/components/ui/slider";
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
-  Loader2, Download, Heart, ListPlus, MoreHorizontal, Check,
+  Loader2, Download, Heart, ListPlus, MoreHorizontal, Check, X,
 } from "lucide-react";
 import {
   useAddFavorite,
@@ -45,8 +45,12 @@ export function PlayerBar() {
   const addToPlaylist = useAddTrackToPlaylist();
 
   const [addedToPlaylist, setAddedToPlaylist] = useState<number | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!currentTrack) return null;
+  // Re-show bar whenever a new track starts
+  useEffect(() => { setDismissed(false); }, [currentTrack?.id]);
+
+  if (!currentTrack || dismissed) return null;
 
   const progress = (currentTime / (duration || 1)) * 100;
   const isFavorited = favorites?.some(f => f.trackId === currentTrack.id);
@@ -274,7 +278,7 @@ export function PlayerBar() {
           </div>
         </div>
 
-        {/* Right: download + volume */}
+        {/* Right: download + volume + close */}
         <div className="flex items-center justify-end gap-2 w-[30%] min-w-0">
           <button
             onClick={handleDownload}
@@ -295,6 +299,14 @@ export function PlayerBar() {
           <div className="w-16 md:w-24">
             <Slider value={[volume]} max={1} step={0.01} onValueChange={([v]) => setVolume(v)} className="cursor-pointer" />
           </div>
+          <button
+            onClick={() => setDismissed(true)}
+            title="Close player"
+            className="shrink-0 p-1 rounded text-muted-foreground hover:text-foreground transition-colors ml-1"
+            data-testid="button-close-player"
+          >
+            <X size={15} />
+          </button>
         </div>
       </div>
 
@@ -344,6 +356,16 @@ export function PlayerBar() {
         {/* Next */}
         <button onClick={nextTrack} className="shrink-0 p-1 text-muted-foreground">
           <SkipForward size={17} fill="currentColor" />
+        </button>
+
+        {/* Close */}
+        <button
+          onClick={() => setDismissed(true)}
+          title="Close player"
+          className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+          data-testid="button-close-player-mobile"
+        >
+          <X size={16} />
         </button>
 
         {/* More options */}

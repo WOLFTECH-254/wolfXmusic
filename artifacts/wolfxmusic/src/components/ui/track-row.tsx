@@ -19,10 +19,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -217,30 +213,29 @@ export function TrackRow({ track, index, queue, showAlbum = true, onRemove }: Tr
               <MoreHorizontal size={15} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-card border-border font-mono text-sm">
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="hover:bg-primary/10 cursor-pointer font-mono text-xs">
-                <Plus className="mr-2 h-3.5 w-3.5" />
-                Add to Playlist
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent className="bg-card border-border">
-                  {!playlists?.length ? (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground font-mono">No playlists yet</div>
-                  ) : (
-                    playlists.map(p => (
-                      <DropdownMenuItem
-                        key={p.id}
-                        onClick={(e) => handleAddToPlaylist(p.id, e)}
-                        className="hover:bg-primary/10 cursor-pointer font-mono text-xs"
-                      >
-                        {p.name}
-                      </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
+          <DropdownMenuContent align="end" side="top" sideOffset={6} className="w-52 bg-card border-border font-mono text-sm z-[200]">
+            {/* Flat playlist list — no sub-menu that can overflow off screen */}
+            <div className="px-2 pt-2 pb-1">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5 px-1 flex items-center gap-1.5">
+                <Plus className="h-3 w-3" /> Add to Playlist
+              </p>
+              {!playlists?.length ? (
+                <p className="text-xs text-muted-foreground px-1 py-1">No playlists yet</p>
+              ) : (
+                <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
+                  {playlists.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={e => handleAddToPlaylist(p.id, e)}
+                      className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded text-xs hover:bg-primary/10 transition-colors"
+                    >
+                      <Plus className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {onRemove && (
               <>
                 <DropdownMenuSeparator />
