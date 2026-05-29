@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { PlayerBar } from "../player/PlayerBar";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
+import { usePlayer } from "@/contexts/PlayerContext";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { currentTrack } = usePlayer();
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden relative">
@@ -29,7 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar onNavigate={() => setMobileOpen(false)} />
       </div>
 
-      <main className="flex-1 overflow-y-auto pb-28 relative min-w-0">
+      <main className={`flex-1 overflow-y-auto relative min-w-0 transition-all duration-300 ${currentTrack ? "pb-28" : "pb-0"}`}>
         {/* Top mobile nav bar */}
         <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-background/90 backdrop-blur-md border-b border-border md:hidden">
           <button
@@ -41,7 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu size={20} />
           </button>
           <span className="font-orbitron font-black tracking-widest text-sm">
-            <span className="text-primary">WOLF</span><span className="text-foreground">X</span><span className="text-foreground/70">music</span>
+            <span className="text-primary">wolf</span><span className="text-foreground">X</span><span className="text-foreground/70">music</span>
           </span>
         </div>
 

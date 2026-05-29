@@ -163,7 +163,7 @@ export function PlayerBar() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300"
       style={{
         background: "rgba(0,0,0,0.97)",
         borderTop: "1px solid rgba(0,255,0,0.2)",
