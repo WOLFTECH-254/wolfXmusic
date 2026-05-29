@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Track } from "@workspace/api-client-react/src/generated/api.schemas";
 
+const PLAY_COUNT_KEY = "wolfxmusic_play_count";
+
 interface PlayerState {
   currentTrack: Track | null;
   queue: Track[];
@@ -35,6 +37,29 @@ async function fetchStreamUrl(title: string, artist: string): Promise<string | n
   } catch {
     return null;
   }
+}
+
+function recordPlay(track: Track) {
+  // Increment localStorage play count for sign-up prompt
+  const count = Number(localStorage.getItem(PLAY_COUNT_KEY) || "0") + 1;
+  localStorage.setItem(PLAY_COUNT_KEY, String(count));
+  window.dispatchEvent(new Event("wolfxmusic:playrecorded"));
+
+  // Fire-and-forget to API (best effort — no auth required)
+  const token = localStorage.getItem("wolfxmusic_token");
+  fetch("/api/plays", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      trackId: track.id,
+      trackTitle: track.title,
+      trackArtist: track.artist,
+      thumbnail: track.thumbnail,
+    }),
+  }).catch(() => {/* ignore */});
 }
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
@@ -117,6 +142,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIsFetching(true);
 
     const id = currentTrack.id;
+    const trackSnapshot = currentTrack;
     fetchStreamUrl(currentTrack.title, currentTrack.artist).then(url => {
       if (currentTrackRef.current?.id !== id) return;
       setIsFetching(false);
@@ -124,10 +150,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setStreamUrl(url);
         audio.src = url;
         audio.load();
-        // Only auto-play if the user intended to play (not on a page refresh where isPlaying
-        // was restored as false from localStorage)
         if (isPlayingRef.current) {
-          audio.play().catch(() => setIsPlaying(false));
+          audio.play()
+            .then(() => recordPlay(trackSnapshot))
+            .catch(() => setIsPlaying(false));
+        } else {
+          recordPlay(trackSnapshot);
         }
       } else {
         setIsPlaying(false);
